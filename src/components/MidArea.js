@@ -1,14 +1,14 @@
-import React from 'react';
-import { useAppContext } from './AppContext';
+import React from "react";
+import { useAppContext } from "./AppContext";
 
 const MidArea = () => {
   const { cats, setCats, activeCat, setActiveCat } = useAppContext();
 
   const handleDrop = (event) => {
     event.preventDefault();
-    const data = event.dataTransfer.getData('text/plain');
+    const data = event.dataTransfer.getData("text/plain");
     setCats((prevCats) => {
-      return prevCats.map(cat => {
+      return prevCats.map((cat) => {
         if (cat.id === activeCat) {
           return { ...cat, instructions: [...cat.instructions, data] };
         }
@@ -23,16 +23,17 @@ const MidArea = () => {
 
   const deleteInstruction = (index) => {
     setCats((prevCats) => {
-      return prevCats.map(cat => {
+      return prevCats.map((cat) => {
         if (cat.id === activeCat) {
-          const updatedInstructions = cat.instructions.filter((_, idx) => idx !== index);
+          const updatedInstructions = cat.instructions.filter(
+            (_, idx) => idx !== index
+          );
           return { ...cat, instructions: updatedInstructions };
         }
         return cat;
       });
     });
   };
-
   return (
     <div className="flex-1 h-full overflow-auto flex">
       {/* Left side - Cat list */}
@@ -42,7 +43,7 @@ const MidArea = () => {
           <div
             key={cat.id}
             className={`p-3 mb-2 rounded-lg cursor-pointer ${
-              activeCat === cat.id ? 'bg-blue-200' : 'bg-white'
+              activeCat === cat.id ? "bg-blue-200" : "bg-white"
             }`}
             onClick={() => setActiveCat(cat.id)}
           >
@@ -53,15 +54,21 @@ const MidArea = () => {
 
       {/* Right side - Instructions drop area */}
       <div className="w-2/3 p-4">
-        <h2 className="text-xl font-bold mb-4">Instructions for Cat {activeCat}</h2>
+        <h2 className="text-xl font-bold mb-4">
+          Instructions for Cat {activeCat}
+        </h2>
         <div
           className="border-2 border-dashed border-gray-300 p-4 min-h-[200px] rounded-lg"
           onDrop={handleDrop}
           onDragOver={allowDrop}
+          style={{ cursor: "pointer" }}
         >
           {cats[activeCat - 1]?.instructions?.length > 0 ? (
             cats[activeCat - 1].instructions.map((instr, index) => (
-              <div key={index} className="bg-white p-2 mb-2 rounded flex justify-between items-center">
+              <div
+                key={index}
+                className="bg-white p-2 mb-2 rounded flex justify-between items-center"
+              >
                 <span>{instr}</span>
                 <button
                   onClick={() => deleteInstruction(index)}

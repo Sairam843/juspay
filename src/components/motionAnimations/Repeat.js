@@ -1,6 +1,7 @@
 // components/Repeat.js
 import React, { useState } from "react";
 import { useAppContext } from "../AppContext";
+import { cardStyles } from "./MoveLeft";
 const Repeat = () => {
   const [repeatValue, setRepeatValue] = useState(1);
   const { setCats, activeCat } = useAppContext();
@@ -11,11 +12,7 @@ const Repeat = () => {
 
   return (
     <div
-      style={{
-        border: "solid black 1px",
-        padding: "10px",
-        backgroundColor: "white",
-      }}
+    style={cardStyles}
       className="draggable mb-3"
       draggable onDragStart={handleDragStart}
     >

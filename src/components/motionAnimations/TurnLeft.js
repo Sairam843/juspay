@@ -1,5 +1,6 @@
 // components/TurnLeft.js
 import React, { useState } from 'react';
+import { cardStyles } from './MoveLeft';
 
 const TurnLeft = () => {
   const [turnValue, setTurnValue] = useState(15);
@@ -10,11 +11,7 @@ const TurnLeft = () => {
 
   return (
     <div
-    style={{
-      border: "solid black 1px",
-      padding: "10px",
-      backgroundColor: "white",
-    }}
+    style={cardStyles}
     className="draggable mb-3"
     draggable onDragStart={handleDragStart}
   >

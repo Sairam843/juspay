@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { cardStyles } from "./MoveLeft";
 
 const GoTo = () => {
   const [xValue, setXValue] = useState(0);
@@ -10,20 +11,18 @@ const GoTo = () => {
 
   return (
     <div
-      style={{
-        border: "solid black 1px",
-        padding: "10px",
-        backgroundColor: "white",
-        display: "flex",
-        alignItems: "center",
-      }}
+      style={{ ...cardStyles, display: "flex", alignItems: "center" }}
       className="draggable mb-3"
-      draggable 
+      draggable
       onDragStart={handleDragStart}
     >
-      <span className="drag-label">Go to</span>
-      <div style={{ display: "flex", flexDirection: "column", marginLeft: "5px" }}>
-        <div style={{ display: "flex", alignItems: "center", marginBottom: "5px" }}>
+      <span className="drag-label">Go To</span>
+      <div
+        style={{ display: "flex", flexDirection: "column", marginLeft: "5px" }}
+      >
+        <div
+          style={{ display: "flex", alignItems: "center", marginBottom: "5px" }}
+        >
           <span style={{ marginRight: "1px" }}>X:</span>
           <input
             type="number"

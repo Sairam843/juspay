@@ -1,5 +1,6 @@
 // components/MoveRight.js
 import React, { useState } from 'react';
+import { cardStyles } from './MoveLeft';
 
 const MoveRight = () => {
   const [rightValue, setRightValue] = useState(10);
@@ -10,11 +11,7 @@ const MoveRight = () => {
 
   return (
     <div
-      style={{
-        border: "solid black 1px",
-        padding: "10px",
-        backgroundColor: "white",
-      }}
+    style={cardStyles}
       className="draggable mb-3"
       draggable onDragStart={handleDragStart}
     >
