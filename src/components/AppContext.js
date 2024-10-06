@@ -14,9 +14,31 @@ export const AppProvider = ({ children }) => {
       visibility: true,
       message: null
     }
-  ]);  const handleAddCat = () => {
+  ]);  
+  const handleAddCat = () => {
     const newCatId = cats.length + 1;
-    setCats((prevCats) => [...prevCats, { id: newCatId, instructions: [], position: { x: 0, y: 0 }, rotation: 0 }]);
+    const catSize = 50; // Adjust based on your cat size
+    const spacing = 120; // Space between cats
+    const catsPerRow = 3; // Number of cats per row
+  
+    // Calculate the new cat's position
+    const row = Math.floor((newCatId - 1) / catsPerRow);
+    const col = (newCatId - 1) % catsPerRow;
+  
+    const newPosition = {
+      x: col * (catSize + spacing),
+      y: row * (catSize + spacing)
+    };
+  
+    setCats((prevCats) => [
+      ...prevCats, 
+      { 
+        id: newCatId, 
+        instructions: [], 
+        position: newPosition, 
+        rotation: 0 
+      }
+    ]);
   };
 
   const handlePlay = async () => {
@@ -30,7 +52,8 @@ export const AppProvider = ({ children }) => {
             Math.pow(cats[i].position.x - cats[j].position.x, 2) +
             Math.pow(cats[i].position.y - cats[j].position.y, 2)
           );
-          if (distance < 15) { // Collision threshold
+          // console.log(distance,"distance")
+          if (distance < 60) { // Collision threshold
             collisions.push([cats[i].id, cats[j].id]);
           }
         }
@@ -42,7 +65,7 @@ export const AppProvider = ({ children }) => {
       let newPosition = { ...cat.position };
       let newRotation = cat.rotation;
       let newMessage = null;
-      let newVisibility = cat.visibility !== undefined ? cat.visibility : true; // Default to visible if not set
+      let newVisibility = cat.visibility;
     
       const matches = instr.match(/(-?\d+)/g);
       const value = matches ? parseInt(matches[0], 10) : 0;
@@ -70,10 +93,7 @@ export const AppProvider = ({ children }) => {
         newVisibility = false;
       }
     
-      // Normalize rotation to be between 0 and 359 degrees
       newRotation = ((newRotation % 360) + 360) % 360;
-    
-      // Round position to avoid floating point imprecision
       newPosition.x = Math.round(newPosition.x * 100) / 100;
       newPosition.y = Math.round(newPosition.y * 100) / 100;
     
@@ -90,54 +110,53 @@ export const AppProvider = ({ children }) => {
       let updatedCats = [...cats];
       let collisionOccurred = false;
       let collisionPair = null;
-  
-      for (let i = 0; i < Math.max(...cats.map(cat => cat.instructions.length)); i++) {
-        for (let catIndex = 0; catIndex < updatedCats.length; catIndex++) {
-          const cat = updatedCats[catIndex];
+
+      const maxInstructions = Math.max(...cats.map(cat => cat.instructions.length));
+
+      for (let i = 0; i < maxInstructions; i++) {
+        const catUpdates = updatedCats.map(async (cat) => {
           if (i < cat.instructions.length) {
             const instr = cat.instructions[i];
             
             if (instr.startsWith('Repeat')) {
-              // Handle Repeat instruction
               const repeatCount = parseInt(instr.match(/\d+/)[0], 10);
               const previousInstructions = cat.instructions.slice(0, i);
               for (let j = 0; j < repeatCount; j++) {
                 for (const prevInstr of previousInstructions) {
-                  updatedCats[catIndex] = executeInstruction(updatedCats[catIndex], prevInstr);
+                  cat = executeInstruction(cat, prevInstr);
                 }
               }
             } else {
-              updatedCats[catIndex] = executeInstruction(cat, instr);
+              cat = executeInstruction(cat, instr);
             }
-  
-            // Check for collisions after each instruction
-            const collisions = checkCollisions(updatedCats);
-            if (collisions.length > 0) {
-              collisionOccurred = true;
-              collisionPair = collisions[0];
-              break;
-            }
-  
-            // Update the state and wait
-            setCats(updatedCats);
-            await delay(1000);
           }
+          return cat;
+        });
+
+        updatedCats = await Promise.all(catUpdates);
+
+        const collisions = checkCollisions(updatedCats);
+        if (collisions.length > 0) {
+          collisionOccurred = true;
+          collisionPair = collisions[0];
+          break;
         }
-  
+
+        setCats(updatedCats);
+        await delay(1000);
+
         if (collisionOccurred) break;
       }
-  
+
       if (collisionOccurred) {
         alert(`Collision occurred! Cat ${collisionPair[0]} collided with Cat ${collisionPair[1]}. Instructions will be exchanged.`);
         
-        // Exchange instructions
         const cat1Index = updatedCats.findIndex(cat => cat.id === collisionPair[0]);
         const cat2Index = updatedCats.findIndex(cat => cat.id === collisionPair[1]);
         const tempInstructions = updatedCats[cat1Index].instructions;
         updatedCats[cat1Index].instructions = updatedCats[cat2Index].instructions;
         updatedCats[cat2Index].instructions = tempInstructions;
-  
-        // Update the state with exchanged instructions
+
         setCats(updatedCats);
       }
     };
