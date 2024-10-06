@@ -70,7 +70,7 @@ const Sidebar = () => {
       <TurnRight />
       <GoTo />
       <Repeat />
-      <div className="font-bold mb-5">Motion</div>
+      <div className="font-bold mb-5">looks</div>
       <SayHello/>
       <Show/>
       <Hide/>
