@@ -52,8 +52,7 @@ export const AppProvider = ({ children }) => {
             Math.pow(cats[i].position.x - cats[j].position.x, 2) +
             Math.pow(cats[i].position.y - cats[j].position.y, 2)
           );
-          // console.log(distance,"distance")
-          if (distance < 60) { // Collision threshold
+          if (distance < 70) { // Collision threshold
             collisions.push([cats[i].id, cats[j].id]);
           }
         }
@@ -61,7 +60,7 @@ export const AppProvider = ({ children }) => {
       return collisions;
     };
   
-    const executeInstruction = (cat, instr) => {
+    const executeInstruction = (cat, instr, reverse = false) => {
       let newPosition = { ...cat.position };
       let newRotation = cat.rotation;
       let newMessage = null;
@@ -69,28 +68,31 @@ export const AppProvider = ({ children }) => {
     
       const matches = instr.match(/(-?\d+)/g);
       const value = matches ? parseInt(matches[0], 10) : 0;
+      const reverseValue = reverse ? -value : value;
     
       if (instr.includes('Move Right')) {
         const radians = (newRotation * Math.PI) / 180;
-        newPosition.x += Math.cos(radians) * value;
-        newPosition.y += Math.sin(radians) * value;
+        newPosition.x += Math.cos(radians) * reverseValue;
+        newPosition.y += Math.sin(radians) * reverseValue;
       } else if (instr.includes('Move Left')) {
         const radians = (newRotation * Math.PI) / 180;
-        newPosition.x -= Math.cos(radians) * value;
-        newPosition.y -= Math.sin(radians) * value;
+        newPosition.x -= Math.cos(radians) * reverseValue;
+        newPosition.y -= Math.sin(radians) * reverseValue;
       } else if (instr.includes('Turn Right')) {
-        newRotation += value;
+        newRotation += reverseValue;
       } else if (instr.includes('Turn Left')) {
-        newRotation -= value;
+        newRotation -= reverseValue;
       } else if (instr.includes('Go to')) {
-        const [x, y] = matches ? matches.map(Number) : [0, 0];
-        newPosition = { x, y };
+        if (!reverse) {
+          const [x, y] = matches ? matches.map(Number) : [0, 0];
+          newPosition = { x, y };
+        }
       } else if (instr.includes('Say Hello')) {
-        newMessage = 'Hello';
+        newMessage = reverse ? null : 'Hello';
       } else if (instr === 'Show') {
-        newVisibility = true;
+        newVisibility = !reverse;
       } else if (instr === 'Hide') {
-        newVisibility = false;
+        newVisibility = reverse;
       }
     
       newRotation = ((newRotation % 360) + 360) % 360;
@@ -106,14 +108,15 @@ export const AppProvider = ({ children }) => {
       };
     };
   
-    const executeInstructions = async (cats) => {
+    const executeInstructions = async (cats, startIndex = 0, endIndex = Infinity) => {
       let updatedCats = [...cats];
       let collisionOccurred = false;
       let collisionPair = null;
-
+      let collisionStep = -1;
+  
       const maxInstructions = Math.max(...cats.map(cat => cat.instructions.length));
-
-      for (let i = 0; i < maxInstructions; i++) {
+  
+      for (let i = startIndex; i < Math.min(maxInstructions, endIndex); i++) {
         const catUpdates = updatedCats.map(async (cat) => {
           if (i < cat.instructions.length) {
             const instr = cat.instructions[i];
@@ -132,36 +135,65 @@ export const AppProvider = ({ children }) => {
           }
           return cat;
         });
-
+  
         updatedCats = await Promise.all(catUpdates);
-
+  
         const collisions = checkCollisions(updatedCats);
         if (collisions.length > 0) {
           collisionOccurred = true;
           collisionPair = collisions[0];
+          collisionStep = i;
           break;
         }
-
+  
         setCats(updatedCats);
         await delay(1000);
-
+  
         if (collisionOccurred) break;
       }
-
-      if (collisionOccurred) {
-        alert(`Collision occurred! Cat ${collisionPair[0]} collided with Cat ${collisionPair[1]}. Instructions will be exchanged.`);
-        
-        const cat1Index = updatedCats.findIndex(cat => cat.id === collisionPair[0]);
-        const cat2Index = updatedCats.findIndex(cat => cat.id === collisionPair[1]);
-        const tempInstructions = updatedCats[cat1Index].instructions;
-        updatedCats[cat1Index].instructions = updatedCats[cat2Index].instructions;
-        updatedCats[cat2Index].instructions = tempInstructions;
-
-        setCats(updatedCats);
-      }
+  
+      return { updatedCats, collisionOccurred, collisionPair, collisionStep };
     };
   
-    await executeInstructions(cats);
+    const reverseAnimation = async (cats, collisionStep) => {
+      let updatedCats = [...cats];
+      for (let i = collisionStep; i >= 0; i--) {
+        const catUpdates = updatedCats.map(async (cat) => {
+          if (i < cat.instructions.length) {
+            const instr = cat.instructions[i];
+            cat = executeInstruction(cat, instr, true); // true for reverse
+          }
+          return cat;
+        });
+  
+        updatedCats = await Promise.all(catUpdates);
+        setCats(updatedCats);
+        await delay(1000);
+      }
+      return updatedCats;
+    };
+  
+    // Main execution
+    let { updatedCats, collisionOccurred, collisionPair, collisionStep } = await executeInstructions(cats);
+  
+    if (collisionOccurred) {
+      // alert(`Collision occurred! Cat ${collisionPair[0]} collided with Cat ${collisionPair[1]}. Reversing animation and exchanging instructions.`);
+      
+      // Reverse animation
+      updatedCats = await reverseAnimation(updatedCats, collisionStep);
+  
+      // Exchange instructions
+      const cat1Index = updatedCats.findIndex(cat => cat.id === collisionPair[0]);
+      const cat2Index = updatedCats.findIndex(cat => cat.id === collisionPair[1]);
+      const tempInstructions = updatedCats[cat1Index].instructions;
+      updatedCats[cat1Index].instructions = updatedCats[cat2Index].instructions;
+      updatedCats[cat2Index].instructions = tempInstructions;
+  
+      setCats(updatedCats);
+  
+      // Execute exchanged instructions once
+      await executeInstructions(updatedCats);
+    }
   };
 
   return (
